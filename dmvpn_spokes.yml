@@ -1,0 +1,24 @@
+office1:
+   name: office1
+   supernet: '10.2'
+   srvr: '10.1.199.66'
+   01_ip: 'pub_ip_office1_a'
+   02_ip: 'pub_ip_office1_b' 
+office2:
+   name: office2
+   supernet: '10.11'
+   srvr: '10.11.199.66'
+   01_ip: 'pub_ip_office2_a'
+   02_ip: 'pub_ip_office2_b'
+office3:
+   name: office3
+   supernet: '10.16'
+   srvr: '10.16.199.66'
+   01_ip: 'pub_ip_office3_a'
+   02_ip: 'pub_ip_office3_b'
+office4:
+   name: office4
+   supernet: '10.15'
+   srvr: '10.15.199.66'
+   01_ip: 'pub_ip_office4_a'
+   02_ip: 'pub_ip_office4_b'

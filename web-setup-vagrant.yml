@@ -1,0 +1,28 @@
+---
+- hosts: localhost
+  gather_facts: no
+  ignore_errors: yes
+  connection: local 
+
+  vars:
+    path_to_keys: '/vagrant/keys/.ssh'
+    key_name: 'vagrant_rsa'
+
+
+  tasks:
+    - name: Build keys directories
+      file:
+        path: "{{path_to_keys}}"
+        state: directory
+
+  #   - name: Generate temp keys using ansible module. ( ansible version > 2.8)
+  #     openssh_keypair:
+  #       path: "{{path_to_keys}}/{{key_name}}"
+  #       size: 2048
+  #     when: ansible_version.full is version_compare('2.8', '>=')
+    - name: Generate temp keys via command. (ansible version < 2.8 )
+      command : ssh-keygen -q -t rsa -f "{{path_to_keys}}/{{key_name}}" -C "" -N ""
+      args:
+        creates:"{{path_to_keys}}/{{key_name}}"
+
+      

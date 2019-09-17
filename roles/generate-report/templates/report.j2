@@ -1,0 +1,2352 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th, td {
+  text-align: left;
+  padding: 8px;
+}
+tr:nth-child(even){background-color: #f2f2f2}
+th {
+  background-color: #6FA8DC;
+  color: white;
+}
+
+hr { 
+  display: block;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  margin-left: auto;
+  margin-right: auto;
+  border-style: inset;
+  border-width: 1px;
+}  
+</style>
+</head>
+<body>
+
+
+{# Initialize Status Flags #}
+{% set core01_fail_status = { 'flag': False } %} 
+{% set core02_fail_status = { 'flag': False } %}
+{% set core01_warn_status = { 'flag': False } %} 
+{% set core02_warn_status = { 'flag': False } %}
+{% set vpn01_fail_status = { 'flag': False } %} 
+{% set vpn02_fail_status = { 'flag': False } %}
+{% set vpn01_warn_status = { 'flag': False } %}
+{% set vpn02_warn_status = { 'flag': False } %}
+{% set fw01_fail_status = { 'flag': False } %} 
+{% set fw02_fail_status = { 'flag': False } %}
+{% set fw01_warn_status = { 'flag': False } %}
+{% set fw02_warn_status = { 'flag': False } %}
+{% set insecure_fail_status = { 'flag': False } %}
+{% set insecure_warn_status = { 'flag': False } %}
+{% set spoke_warn_status = { 'flag': False } %}
+{% set aruba_access_warn_status = { 'flag': False } %}
+{% set aruba_access_fail_status = { 'flag': False } %}
+{% set aruba_access_defined_status = { 'flag': False } %}
+
+{# Evaluate Defined Status #}
+{% if hostvars['core01'] is defined and hostvars['core01'].hostname is defined %}
+{% set core01_defined_status = { 'flag': True } %} 
+{% else %}
+{% set core01_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['vpn01'] is defined and  hostvars['vpn01'].hostname is defined %}
+{% set vpn01_defined_status = { 'flag': True } %} 
+{% else %}
+{% set vpn01_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['core02'] is defined and hostvars['core02'].hostname is defined %}
+{% set core02_defined_status = { 'flag': True } %} 
+{% else %}
+{% set core02_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['vpn02'] is defined and  hostvars['vpn02'].hostname is defined %}
+{% set vpn02_defined_status = { 'flag': True } %} 
+{% else %}
+{% set vpn02_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['aruba-access-1'] is defined and  hostvars['aruba-access-1'].hostname is defined %}
+{% set aruba_access_defined_status = { 'flag': True } %} 
+{% else %}
+{% set aruba_access_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['report-server']['fw01_hostname'] is defined %}
+{% set fw01_defined_status = { 'flag': True } %} 
+{% else %}
+{% set fw01_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['report-server']['fw02_hostname'] is defined %}
+{% set fw02_defined_status = { 'flag': True } %} 
+{% else %}
+{% set fw02_defined_status = { 'flag': False } %} 
+{% endif %}
+
+{% if hostvars['nt-server'] is defined and hostvars['nt-server']['nt_telnet_check'] is defined %}
+{% set insecure_defined_status = { 'flag': True } %} 
+{% else %}
+{% set insecure_defined_status = { 'flag': False } %} 
+{% endif %}
+
+<br>
+
+<font size="7">
+<center><b>Office Validator report for {{ hostvars['report-server']['site']}}</b></font></center>
+<br>
+<font size="3">
+<center><b>Run {{ hostvars['report-server']['date']}} at {{ hostvars['report-server']['time']}} Central Time</b></font></center>
+<br>
+
+<font size="6">
+<center><b><a href="#FINAL_STATUS">CLICK HERE TO JUMP TO THE FINAL RESULTS</a></b></font></center>
+<br>
+<center><h1>DEVICES CHECKED</h1></center>
+<table id="devices_checked">
+    <tr>
+        <th>Device Type</th>
+		<th>Device Name</th>
+        <th>Device IP</th>
+    </tr>
+    <tr>
+        <td>CORE01</td>
+		{% if core01_defined_status.flag == True %}
+		<td><a href="#CORE01">{{ hostvars['core01'].hostname }}</a></td>
+        <td><a href="#CORE01">{{ hostvars['core01'].ansible_host }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>
+    <tr>
+        <td>CORE02</td>
+		{% if core02_defined_status.flag == True %}
+		<td><a href="#CORE02">{{ hostvars['core02'].hostname }}</a></td>
+        <td><a href="#CORE02">{{ hostvars['core02'].ansible_host }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>
+    <tr>
+        <td>VPN01</td>
+		{% if vpn01_defined_status.flag == True %}
+		<td><a href="#VPN01">{{ hostvars['vpn01'].hostname }}</a></td>
+        <td><a href="#VPN01">{{ hostvars['vpn01'].ansible_host }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>
+    <tr>
+        <td>VPN02</td>
+		{% if vpn02_defined_status.flag == True %}
+		<td><a href="#VPN02">{{ hostvars['vpn02'].hostname }}</a></td>
+        <td><a href="#VPN02">{{ hostvars['vpn02'].ansible_host }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>	
+    <tr>
+        <td>FW01</td>
+		{% if fw01_defined_status.flag == True %}
+		<td><a href="#FW01">{{ hostvars['report-server']['fw01_hostname'] }}</a></td>
+        <td><a href="#FW01">{{ fw01_ip_expected }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>
+    <tr>
+        <td>FW02</td>
+		{% if fw02_defined_status.flag == True %}
+		<td><a href="#FW02">{{ hostvars['report-server']['fw02_hostname'] }}</a></td>
+        <td><a href="#FW02">{{ fw02_ip_expected }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>	
+	{% for aruba in groups['aruba-access'] %}
+    <tr>	
+        <td>{{ aruba|upper }}</td>
+		{% if hostvars[aruba]['aruba_access_hostname'] is defined %}
+		<td><a href="#ARUBA">{{ hostvars[aruba]['assigned_hostname'] }}</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO VALIDATE</font></b></td>
+		{% endif %}
+        <td><a href="#ARUBA">{{ hostvars[aruba].ansible_host }}</a></td>	
+    </tr>
+	{% endfor %}
+    <tr>
+        <td>----</td>
+		<td><a href="#SPOKES">DMPVPN SPOKE STATUS</a></td>
+        <td>----</td>
+    </tr>
+    <tr>
+        <td>----</td>
+		{% if insecure_defined_status.flag == True %}
+		<td><a href="#INSECURE">INSECURE PORT CHECK</a></td>
+        <td>----</a></td>
+		{% else %}
+		<td><b><font color="red">UNABLE TO CHECK INSECURE PORTS</font></b></td>
+		<td><font color="red">---</font></td>
+		{% endif %}
+    </tr>        
+</table>
+</div>
+<br>
+<br>
+
+
+
+<hr>
+
+{#_________  ________ ____________________________  ____   #}
+{#\_   ___ \ \_____  \\______   \_   _____/\   _  \/_   |  #}
+{#/    \  \/  /   |   \|       _/|    __)_ /  /_\  \|   |  #}
+{#\     \____/    |    \    |   \|        \\  \_/   \   |  #}
+{# \______  /\_______  /____|_  /_______  / \_____  /___|  #}
+{#        \/         \/       \/        \/        \/       #}
+
+<a name="CORE01"></a>
+{% if core01_defined_status.flag == True %}
+<center><h2>{{ hostvars['core01'].hostname }}</h2></center>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_CORE01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ cumulus_code_ver }}</td>
+        <td>{{ hostvars['core01']['code_ver'] }}</td>
+		<td>
+		  {% if hostvars['core01']['code_ver'] == cumulus_code_ver %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CLAG_CORE01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>CLAG INFORMATION</h3>
+<table id="clag">
+    <tr>
+        <th>Element</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected CLAG elements #}
+    {% for item in core01_clag_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ core01_clag_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core01'] %}
+	  {{ hostvars['core01'][item] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item in hostvars['core01'] and hostvars['core01'][item]== core01_clag_expected[item] %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------SERVICES_CORE01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>SERVICES</h3>
+<table id="services">
+    <tr>
+        <th>Element</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected service elements #}
+    {% for item in cumulus_services_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ cumulus_services_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core01']['service_status']['ansible_facts']['services'] %}
+	  {{ hostvars['core01']['service_status']['ansible_facts']['services'][item]['state'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item in hostvars['core01']['service_status']['ansible_facts']['services'] and hostvars['core01']['service_status']['ansible_facts']['services'][item]['state']== cumulus_services_expected[item] %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------OSPF_CORE01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>OSPF-NEIGHBOR-COUNT</h3>
+<table id="OSPF-count">
+    <tr>
+        <th>Expected</th>
+		<th>Actual</th>
+        <th>Pass/Fail</th>
+    </tr>
+	<tr>
+	<td>{{ core01_ospf_neigh_count_expected }}</td>
+	<td>
+	  {% if 'ospf_data' in hostvars['core01'] %}
+	  {{ hostvars['core01']['ospf_data']|length }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if 'ospf_data' in hostvars['core01'] and hostvars['core01']['ospf_data']|length == core01_ospf_neigh_count_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>	
+</table>	
+</div>
+<br>
+
+<h3>OSPF-NEIGHBOR-STATE</h3>
+{% if 'ospf_data' in hostvars['core01'] %}
+<table id="OSPF-state">
+    <tr>
+	    <th>Peer</th>
+        <th>Expected State</th>
+		<th>Actual State</th>
+        <th>Pass/Fail</th>
+    </tr>
+{% for neigh in hostvars['core01']['ospf_data'] %}		
+	<tr>
+	<td>{{ neigh }}</td>
+	<td>{{ core01_ospf_neigh_status_expected }}</td>
+	<td>
+	  {{ hostvars['core01']['ospf_data'][neigh][0]['state'] }}
+	</td>
+	<td>
+	  {% if hostvars['core01']['ospf_data'][neigh][0]['state'] == core01_ospf_neigh_status_expected %}
+      <font color="green">PASS</font>
+	  {% elif hostvars['core01']['ospf_data'][neigh][0]['state'] == core02_ospf_neigh_status_expected %}
+	  <font color="orange">WARN-
+      {%-   if core01_warn_status.update({'flag':True}) %}{%- endif %}
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>	
+    </tr>
+{% endfor %}	
+</table>	
+</div>
+<br>
+{% else %}
+ <font color="red">NO OSPF DATA</font>
+{%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+{% endif %} 
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------BGP_CORE01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>BGP-NEIGHBOR-COUNT</h3>
+<table id="bgp-count">
+    <tr>
+        <th>Expected</th>
+		<th>Actual</th>
+        <th>Pass/Fail</th>
+    </tr>
+	<tr>
+	<td>{{ core01_bgp_neigh_count_expected }}</td>
+	<td>
+	  {% if 'bgp_peercount' in hostvars['core01'] %}
+	  {{ hostvars['core01']['bgp_peercount'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if 'bgp_peercount' in hostvars['core01'] and hostvars['core01']['bgp_peercount'] == core01_bgp_neigh_count_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>	
+</table>	
+</div>
+<br>
+
+<h3>BGP-NEIGHBOR-STATE</h3>
+{% if 'bgp_data' in hostvars['core01'] %}
+<table id="bgp-state">
+    <tr>
+	    <th>Peer</th>
+        <th>Expected State</th>
+		<th>Actual State</th>
+        <th>Pass/Fail</th>
+    </tr>
+{% for neigh in hostvars['core01']['bgp_data'] %}		
+	<tr>
+	<td>{{ neigh }}</td>
+	<td>{{ core01_bgp_neigh_status_expected }}</td>
+	<td>
+	  {{ hostvars['core01']['bgp_data'][neigh]['state'] }}
+	</td>
+	<td>
+	  {% if hostvars['core01']['bgp_data'][neigh]['state'] == core01_bgp_neigh_status_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>	
+    </tr>
+{% endfor %}	
+</table>	
+</div>
+<br>
+{% else %}
+ <font color="red">NO bgp DATA</font>
+{%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+{% endif %} 
+
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------PING_CORE01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>PING RESULTS</h3>
+<table id="ping">
+    <tr>
+        <th>Destination</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all pings#}
+    {% for item in core01_ping_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ core01_ping_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core01'] %}
+	  {{ hostvars['core01'][item] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+      {% if item in hostvars['core01'] and core01_ping_expected[item] in hostvars['core01'][item] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}  
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>		
+
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------INTERFACES_CORE01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>PHYSICAL INTERFACES</h3>
+<table id="iface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all interfaces#}
+    {% for item in core_physical_interfaces %}
+	{% set ifname = core_physical_interfaces[item]['name'] %}
+	<tr>
+	<td>{{ core_physical_interfaces[item]['name'] }} - {{ core_physical_interfaces[item]['description'] }}</td>
+	<td>{{ core_physical_interfaces[item]['core01_expected_status'] }}</td>
+	<td>
+	  {% if hostvars['core01'].interface_data[ifname] is defined %}
+	  {{ hostvars['core01'].interface_data[ifname]['linkstate'] }}
+	  {% else %}
+	  DN
+	  {% endif %}
+	</td>
+	<td>
+	  {% if hostvars['core01'].interface_data[ifname] is defined and hostvars['core01'].interface_data[ifname]['linkstate'] == core_physical_interfaces[item]['core01_expected_status'] %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core01'].interface_data[ifname] is defined and hostvars['core01'].interface_data[ifname]['linkstate'] != core_physical_interfaces[item]['core01_expected_status'] %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% elif hostvars['core01'].interface_data[ifname] is not defined and core_physical_interfaces[item]['core01_expected_status'] == 'DN' %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core01'].interface_data[ifname] is not defined and core_physical_interfaces[item]['core01_expected_status'] == 'UP' %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}	  
+	  {% else %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}   
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>	
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------VLAN_INTERFACES_CORE01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>VLAN INTERFACES</h3>
+<table id="vlaniface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all interfaces#}
+    {% for item in core_vlan_interfaces %}
+	{% set ifname = core_vlan_interfaces[item]['name'] %}
+	<tr>
+	<td>{{ core_vlan_interfaces[item]['name'] }}</td>
+	<td>{{ core_vlan_interfaces[item]['core01_expected_status'] }}</td>
+	<td>
+	  {% if hostvars['core01'].interface_data[ifname] is defined %}
+	  {{ hostvars['core01'].interface_data[ifname]['linkstate'] }}
+	  {% else %}
+	  DN
+	  {% endif %}
+	</td>
+	<td>
+	  {% if hostvars['core01'].interface_data[ifname] is defined and hostvars['core01'].interface_data[ifname]['linkstate'] == core_vlan_interfaces[item]['core01_expected_status'] %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core01'].interface_data[ifname] is defined and hostvars['core01'].interface_data[ifname]['linkstate'] != core_vlan_interfaces[item]['core01_expected_status'] %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% elif hostvars['core01'].interface_data[ifname] is not defined and core_vlan_interfaces[item]['core01_expected_status'] == 'DN' %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core01'].interface_data[ifname] is not defined and core_vlan_interfaces[item]['core01_expected_status'] == 'UP' %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}	  
+	  {% else %}
+	  <font color="red">FAIL</font>
+      {%-   if core01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}   
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------OVERALL_CORE01------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<center><h3>CORE01 OVERALL STATUS</h3>
+<h2>{% if core01_fail_status.flag == False %} <font color="green">PASS</font> {% elif core01_fail_status.flag == True %}<b><font color = "red">FAIL</font></b> {% endif %} 
+</h2></center>
+<br>	
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE CORE01!!!</font><br>
+{% endif %}
+
+<hr>
+{#_________  ________ ____________________________   ________   #} 
+{#\_   ___ \ \_____  \\______   \_   _____/\   _  \  \_____  \  #}
+{#/    \  \/  /   |   \|       _/|    __)_ /  /_\  \  /  ____/  #} 
+{#\     \____/    |    \    |   \|        \\  \_/   \/       \  #}
+{# \______  /\_______  /____|_  /_______  / \_____  /\_______ \ #}
+{#        \/         \/       \/        \/        \/         \/ #}
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_CORE02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<a name="CORE02"></a>
+{% if core02_defined_status.flag == True %}
+<center><h2>{{ hostvars['core02'].hostname }}</h2></center>
+
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ cumulus_code_ver }}</td>
+        <td>{{ hostvars['core02']['code_ver'] }}</td>
+		<td>
+		  {% if hostvars['core02']['code_ver'] == cumulus_code_ver %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CLAG_CORE02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>CLAG INFORMATION</h3>
+<table id="clag">
+    <tr>
+        <th>Element</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected CLAG elements #}
+    {% for item in core02_clag_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ core02_clag_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core02'] %}
+	  {{ hostvars['core02'][item] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item in hostvars['core02'] and hostvars['core02'][item]== core02_clag_expected[item] %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------SERVICES_core02------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>SERVICES</h3>
+<table id="services">
+    <tr>
+        <th>Element</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected service elements #}
+    {% for item in cumulus_services_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ cumulus_services_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core02']['service_status']['ansible_facts']['services'] %}
+	  {{ hostvars['core02']['service_status']['ansible_facts']['services'][item]['state'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item in hostvars['core02']['service_status']['ansible_facts']['services'] and hostvars['core02']['service_status']['ansible_facts']['services'][item]['state']== cumulus_services_expected[item] %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------OSPF_core02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>OSPF-NEIGHBOR-COUNT</h3>
+<table id="OSPF-count">
+    <tr>
+        <th>Expected</th>
+		<th>Actual</th>
+        <th>Pass/Fail</th>
+    </tr>
+	<tr>
+	<td>{{ core02_ospf_neigh_count_expected }}</td>
+	<td>
+	  {% if 'ospf_data' in hostvars['core02'] %}
+	  {{ hostvars['core02']['ospf_data']|length }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if 'ospf_data' in hostvars['core02'] and hostvars['core02']['ospf_data']|length == core02_ospf_neigh_count_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>	
+</table>	
+</div>
+<br>
+
+<h3>OSPF-NEIGHBOR-STATE</h3>
+{% if 'ospf_data' in hostvars['core02'] %}
+<table id="OSPF-state">
+    <tr>
+	    <th>Peer</th>
+        <th>Expected State</th>
+		<th>Actual State</th>
+        <th>Pass/Fail</th>
+    </tr>
+{% for neigh in hostvars['core02']['ospf_data'] %}		
+	<tr>
+	<td>{{ neigh }}</td>
+	<td>{{ core02_ospf_neigh_status_expected }}</td>
+	<td>
+	  {{ hostvars['core02']['ospf_data'][neigh][0]['state'] }}
+	</td>
+	<td>
+	  {% if hostvars['core02']['ospf_data'][neigh][0]['state'] == core02_ospf_neigh_status_expected %}
+      <font color="green">PASS</font>
+	  {% elif hostvars['core02']['ospf_data'][neigh][0]['state'] == core01_ospf_neigh_status_expected %}
+	  <font color="orange">WARN-
+      {%-   if core02_warn_status.update({'flag':True}) %}{%- endif %}
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>	
+    </tr>
+{% endfor %}	
+</table>	
+</div>
+<br>
+{% else %}
+ <font color="red">NO OSPF DATA</font>
+{%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+{% endif %} 
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------BGP_core02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>BGP-NEIGHBOR-COUNT</h3>
+<table id="bgp-count">
+    <tr>
+        <th>Expected</th>
+		<th>Actual</th>
+        <th>Pass/Fail</th>
+    </tr>
+	<tr>
+	<td>{{ core02_bgp_neigh_count_expected }}</td>
+	<td>
+	  {% if 'bgp_peercount' in hostvars['core02'] %}
+	  {{ hostvars['core02']['bgp_peercount'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+	  {% if 'bgp_peercount' in hostvars['core02'] and hostvars['core02']['bgp_peercount'] == core02_bgp_neigh_count_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>
+    </tr>	
+</table>	
+</div>
+<br>
+
+<h3>BGP-NEIGHBOR-STATE</h3>
+{% if 'bgp_data' in hostvars['core02'] %}
+<table id="bgp-state">
+    <tr>
+	    <th>Peer</th>
+        <th>Expected State</th>
+		<th>Actual State</th>
+        <th>Pass/Fail</th>
+    </tr>
+{% for neigh in hostvars['core02']['bgp_data'] %}		
+	<tr>
+	<td>{{ neigh }}</td>
+	<td>{{ core02_bgp_neigh_status_expected }}</td>
+	<td>
+	  {{ hostvars['core02']['bgp_data'][neigh]['state'] }}
+	</td>
+	<td>
+	  {% if hostvars['core02']['bgp_data'][neigh]['state'] == core02_bgp_neigh_status_expected %}
+      <font color="green">PASS</font>
+	  {% else %}
+	  <font color="red">FAIL</font>
+	  {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %} 
+	</td>	
+    </tr>
+{% endfor %}	
+</table>	
+</div>
+<br>
+{% else %}
+ <font color="red">NO bgp DATA</font>
+{%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+{% endif %} 	
+
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------PING_CORE02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>PING RESULTS</h3>
+<table id="ping">
+    <tr>
+        <th>Destination</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all pings#}
+    {% for item in core02_ping_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ core02_ping_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['core02'] %}
+	  {{ hostvars['core02'][item] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+      {% if item in hostvars['core02'] and core02_ping_expected[item] in hostvars['core02'][item] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}  
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>		
+
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------INTERFACES_CORE02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>PHYSICAL INTERFACES</h3>
+<table id="iface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all interfaces#}
+    {% for item in core_physical_interfaces %}
+	{% set ifname = core_physical_interfaces[item]['name'] %}
+	<tr>
+	<td>{{ core_physical_interfaces[item]['name'] }} - {{ core_physical_interfaces[item]['description'] }}</td>
+	<td>{{ core_physical_interfaces[item]['core02_expected_status'] }}</td>
+	<td>
+	  {% if hostvars['core02'].interface_data[ifname] is defined %}
+	  {{ hostvars['core02'].interface_data[ifname]['linkstate'] }}
+	  {% else %}
+	  DN
+	  {% endif %}
+	</td>
+	<td>
+	  {% if hostvars['core02'].interface_data[ifname] is defined and hostvars['core02'].interface_data[ifname]['linkstate'] == core_physical_interfaces[item]['core02_expected_status'] %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core02'].interface_data[ifname] is defined and hostvars['core02'].interface_data[ifname]['linkstate'] != core_physical_interfaces[item]['core02_expected_status'] %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% elif hostvars['core02'].interface_data[ifname] is not defined and core_physical_interfaces[item]['core02_expected_status'] == 'DN' %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core02'].interface_data[ifname] is not defined and core_physical_interfaces[item]['core02_expected_status'] == 'UP' %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}	  
+	  {% else %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}   
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>	
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------VLAN_INTERFACES_CORE02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>VLAN INTERFACES</h3>
+<table id="vlaniface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+        <th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all interfaces#}
+    {% for item in core_vlan_interfaces %}
+	{% set ifname = core_vlan_interfaces[item]['name'] %}
+	<tr>
+	<td>{{ core_vlan_interfaces[item]['name'] }}</td>
+	<td>{{ core_vlan_interfaces[item]['core02_expected_status'] }}</td>
+	<td>
+	  {% if hostvars['core02'].interface_data[ifname] is defined %}
+	  {{ hostvars['core02'].interface_data[ifname]['linkstate'] }}
+	  {% else %}
+	  DN
+	  {% endif %}
+	</td>
+	<td>
+	  {% if hostvars['core02'].interface_data[ifname] is defined and hostvars['core02'].interface_data[ifname]['linkstate'] == core_vlan_interfaces[item]['core02_expected_status'] %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core02'].interface_data[ifname] is defined and hostvars['core02'].interface_data[ifname]['linkstate'] != core_vlan_interfaces[item]['core02_expected_status'] %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% elif hostvars['core02'].interface_data[ifname] is not defined and core_vlan_interfaces[item]['core02_expected_status'] == 'DN' %}
+	  <font color="green">PASS</font>
+	  {% elif hostvars['core02'].interface_data[ifname] is not defined and core_vlan_interfaces[item]['core02_expected_status'] == 'UP' %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}	  
+	  {% else %}
+	  <font color="red">FAIL</font>
+      {%-   if core02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}   
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------OVERALL_CORE02------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<center><h3>CORE02 OVERALL STATUS</h3>
+<h2>{% if core02_fail_status.flag == False %} <font color="green">PASS</font> {% elif core02_fail_status.flag == True %}<b><font color = "red">FAIL</font></b> {% endif %} 
+</h2></center>
+<br>
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE CORE02!!!</font><br>
+{% endif %}
+					
+<hr>
+{#   _____  _________ _________ ___________ _________ _________  #}
+{#  /  _  \ \_   ___ \\_   ___ \\_   _____//   _____//   _____/  #}
+{# /  /_\  \/    \  \//    \  \/ |    __)_ \_____  \ \_____  \   #}
+{#/    |    \     \___\     \____|        \/        \/        \  #}
+{#\____|__  /\______  /\______  /_______  /_______  /_______  /  #}
+{#        \/        \/        \/        \/        \/        \/   #}
+<a name="ARUBA"></a>
+{% if aruba_access_defined_status.flag == True %}
+<center><h2>ARUBA-ACCESS SWITCHES</h2></center>
+
+<h3>HOSTNAMES</h3>
+<table id="hostnames">
+    <tr>
+        <th>Assigned Hostname</th>	
+        <th>Actual Hostname</th>
+        <th>Pass/Fail</th>
+    </tr>
+	
+	{% for aruba in groups['aruba-access'] %} 
+    <tr>
+	    <td>{{ aruba }} - {{ hostvars[aruba]['assigned_hostname'] }}</td>
+		{% if hostvars[aruba]['aruba_access_hostname'] is defined %}
+        <td>{{ hostvars[aruba]['aruba_access_hostname'] }}</td>
+		<td>
+		  {% if hostvars[aruba]['assigned_hostname'] in hostvars[aruba]['aruba_access_hostname'] %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+		{% else %}
+        <td><font color="red"> Unable to validate</font></td>
+		<td>
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+        </td>		
+		{% endif %}
+		
+	{% endfor %}		
+    </tr>
+</table>
+
+
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Switch</th>	
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+	
+	{% for aruba in groups['aruba-access'] %} 
+    <tr>
+	    <td>{{ aruba }} - {{ hostvars[aruba]['assigned_hostname'] }}</td>
+        <td>{{ aruba_access_code_ver_expected }}</td>
+		{% if hostvars[aruba]['aruba_access_code_ver'] is defined %}
+        <td>{{ hostvars[aruba]['aruba_access_code_ver'] }}</td>
+		<td>
+		  {% if hostvars[aruba]['aruba_access_code_ver']  == aruba_access_code_ver_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+		{% else %}
+        <td><font color="red"> Unable to validate</font></td>
+		<td>
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+        </td>		
+		{% endif %}
+		
+	{% endfor %}		
+    </tr>
+</table>
+
+<h3>RADIUS</h3>
+<table id="radius">
+    <tr>
+        <th>Switch</th>	
+		<th>Expected Radius Server</th>
+        <th>Actual Radius Server</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{% for aruba in groups['aruba-access'] %} 
+    <tr>
+	    <td>{{ aruba }} - {{ hostvars[aruba]['assigned_hostname'] }}</td>
+        <td>{{ aruba_access_radius_server_expected }}</td>
+		{% if hostvars[aruba]['aruba_access_radius_server'] is defined %}
+        <td>{{ hostvars[aruba]['aruba_access_radius_server'] }}</td>
+		<td>
+		  {% if hostvars[aruba]['aruba_access_radius_server']  == aruba_access_radius_server_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+		{% else %}
+        <td><font color="red"> Unable to validate</font></td>
+		<td>
+		  <b><font color="red"> FAIL</font></b>  {%-   if aruba_access_fail_status.update({'flag':True}) %}{%- endif %} 
+        </td>		
+		{% endif %}
+	{% endfor %}	
+    </tr>
+</table>
+
+<h3>RADIUS STATISTICS</h3>
+<table id="statistics">
+    <tr>
+        <th>Switch - Radius Server:Port</th>	
+		<th>Radius Requests</th>
+        <th>Radius Timeouts</th>
+        <th>Radius Accepts</th>
+		<th>Radius Rejects</th>
+    </tr>
+	{% for aruba in groups['aruba-access'] %}
+    {% if hostvars[aruba]['aruba_access_radius_server'] is defined %}	
+    <tr>
+	    <td>{{ aruba }} - {{ hostvars[aruba]['assigned_hostname'] }}- {{ hostvars[aruba]['aruba_access_radius_server'] }}:{{ hostvars[aruba]['aruba_access_radius_port'] }}</td>
+        <td>{{ hostvars[aruba]['aruba_access_radius_requests'] }}</td>
+		<td>{{ hostvars[aruba]['aruba_access_radius_timeouts'] }}</td>
+		<td>{{ hostvars[aruba]['aruba_access_radius_accepts'] }}</td>
+		<td>{{ hostvars[aruba]['aruba_access_radius_rejects'] }}</td>
+	{% else %}
+        <td>{{ aruba }} - {{ hostvars[aruba]['assigned_hostname'] }} - NO RADIUS INFO</td>
+		<td><font color="orange">NO RADIUS INFO</font></td>
+		<td><font color="orange">NO RADIUS INFO</font></td>
+		<td><font color="orange">NO RADIUS INFO</font></td>
+		<td><font color="orange">NO RADIUS INFO</font></td>
+		{%-   if aruba_access_warn_status.update({'flag':True}) %}{%- endif %} 
+		
+	{% endif %}	
+	</tr>
+	{% endfor %}	
+</table>
+{% else %}
+<font color="red"> UNABLE TO VALIDATE ARUBA-ACCESS SWITCHES!!!</font><br>
+{% endif %}
+</div>
+<br>
+<hr>
+{#_____________      _________  ____   #}
+{#\_   _____/  \    /  \   _  \/_   |  #}
+{# |    __) \   \/\/   /  /_\  \|   |  #}
+{# |     \   \        /\  \_/   \   |  #}
+{# \___  /    \__/\  /  \_____  /___|  #}
+{#     \/          \/         \/       #}
+<a name="FW01"></a>
+{% if fw01_defined_status.flag == True %}
+<center><h2>{{ hostvars['report-server']['fw01_hostname'] }}</h2></center>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_FW01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw01_code_ver_expected }}</td>
+        <td>{{ hostvars['report-server']['fw01_code_ver'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw01_code_ver'] == fw01_code_ver_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw01_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------HOSTNAME_FW01--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>HOSTNAMES</h3>
+<table id="hostnames">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw01_hostname_expected }}</td>
+        <td>{{ hostvars['report-server']['fw01_hostname'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw01_hostname'] == fw01_hostname_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw01_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------HA_FW01------------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>HA VALUES</h3>
+<table id="ha">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw01_ha_enabled_expected }} - {{ fw01_ha_state_expected }}</td>
+        <td>{{ hostvars['report-server']['fw01_ha_enabled'] }} - {{ hostvars['report-server']['fw01_ha_state'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw01_ha_state'] == fw01_ha_state_expected and hostvars['report-server']['fw01_ha_enabled'] == fw01_ha_enabled_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw01_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE FW01!!!</font><br>
+{% endif %}
+
+							
+<hr>							
+{#_____________      _________   ________    #}
+{#\_   _____/  \    /  \   _  \  \_____  \   #}
+{# |    __) \   \/\/   /  /_\  \  /  ____/   #}
+{# |     \   \        /\  \_/   \/       \   #}
+{# \___  /    \__/\  /  \_____  /\_______ \  #}
+{#     \/          \/         \/         \/  #}
+<a name="FW02"></a>
+{% if fw02_defined_status.flag == True %}
+<center><h2>{{ hostvars['report-server']['fw02_hostname'] }}</h2></center>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_FW02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw02_code_ver_expected }}</td>
+        <td>{{ hostvars['report-server']['fw02_code_ver'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw02_code_ver'] == fw02_code_ver_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw02_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------HOSTNAME_FW02--------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>HOSTNAMES</h3>
+<table id="hostnames">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw02_hostname_expected }}</td>
+        <td>{{ hostvars['report-server']['fw02_hostname'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw02_hostname'] == fw02_hostname_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw02_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------HA_FW02------------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>HA VALUES</h3>
+<table id="ha">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ fw02_ha_enabled_expected }} - {{ fw02_ha_state_expected }}</td>
+        <td>{{ hostvars['report-server']['fw02_ha_enabled'] }} - {{ hostvars['report-server']['fw02_ha_state'] }}</td>
+		<td>
+		  {% if hostvars['report-server']['fw02_ha_state'] == fw02_ha_state_expected and hostvars['report-server']['fw02_ha_enabled'] == fw02_ha_enabled_expected %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if fw02_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE FW02!!!</font><br>
+{% endif %}							
+
+<hr>
+{#____   _____________________  _______  ____   #}
+{#\   \ /   /\______   \      \ \   _  \/_   |  #}
+{# \   Y   /  |     ___/   |   \/  /_\  \|   |  #}
+{#  \     /   |    |  /    |    \  \_/   \   |  #}
+{#   \___/    |____|  \____|__  /\_____  /___|  #}
+{#                            \/       \/       #}
+
+<a name="VPN01"></a>
+{% if vpn01_defined_status.flag == True %}
+<center><h2>{{ hostvars['vpn01'].hostname }}</h2></center>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------INTERFACE_VPN01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>INTERFACE INFORMATION</h3>
+<table id="iface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected interfaces #}
+    {% for item in dmvpn01_interface_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ dmvpn01_interface_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['vpn01']['dmvpn_interfaces'] and hostvars['vpn01']['dmvpn_interfaces'][item]['operstatus'] is defined %}
+	  {{ hostvars['vpn01']['dmvpn_interfaces'][item]['operstatus'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+      {% if item in hostvars['vpn01']['dmvpn_interfaces'] and hostvars['vpn01']['dmvpn_interfaces'][item]['operstatus'] is defined and hostvars['vpn01']['dmvpn_interfaces'][item]['operstatus'] == dmvpn01_interface_expected[item] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}  
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_VPN01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ dmvpn_code_ver }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_code_ver'] }}</td>
+		<td>
+		  {% if hostvars['vpn01']['dmvpn_code_ver'] == dmvpn_code_ver %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------LLDP_VPN01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>LLDP</h3>
+<table id="lldpdata">
+    <tr>
+        <th>Interface</th>
+        <th>Neighbor</th>
+        <th>Neighbor-Port</th>
+        <th>Expected Data</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all dpvpn01 lldp #}
+    {% for item in hostvars['vpn01']['dmvpn_lldp'] %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ hostvars['vpn01']['dmvpn_lldp'][item][0]['host'] }}</td>
+	<td>{{ hostvars['vpn01']['dmvpn_lldp'][item][0]['port'] }}</td>
+	<td>
+	  {% if item in dmvpn01_lldp_expected %}
+	  {{ dmvpn01_lldp_expected[item].split('$')[0] }}-{{ dmvpn01_lldp_expected[item].split('$')[1] }}
+	  {% else %}
+	  Not expected
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item not in dmvpn01_lldp_expected %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}
+	  {% if dmvpn01_lldp_expected[item].split('$')[0] in hostvars['vpn01']['dmvpn_lldp'][item][0]['host'] and  dmvpn01_lldp_expected[item].split('$')[1] in hostvars['vpn01']['dmvpn_lldp'][item][0]['port'] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}     	  
+	</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------OSPF_VPN01----------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>OSPF Data</h3>
+<div>
+<h3>ROUTING OSPF</h3>
+<table id="ospfneighbors">
+    <tr>
+        <th>Neighbor</th>
+        <th>Interface</th>
+        <th>State</th>
+        <th>Pass/Fail</th>
+    </tr
+    <tr>
+	{% if hostvars['vpn01']['dmvpn_ospf_neighborid'] is defined %}
+        <td>{{ hostvars['vpn01']['dmvpn_ospf_neighborid'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ospf_interface'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ospf_state'] }}</td>
+        <td>
+        {% if 'FULL/BDR' in hostvars['vpn01']['dmvpn_ospf_state'] %} <font color="green">PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}
+        </td>
+	{% else %}
+        <td></td>
+        <td><font color ="red">NOT FOUND</font></td>
+        <td><font color ="red">NOT FOUND</font></td>
+        <td>font color ="red">FAIL</font>{%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}</td> 
+    {% endif %}       	
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ---------------------------BGP_VPN01------------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>ROUTING BGP</h3>
+<h4>BGP - LINES</h4>
+     Neighbor V AS MsgRcvd MsgSent TblVer InQ OutQ Up/Down State/PfxRcd <br>
+     {{ hostvars['vpn01']['dmvpn_bgp_peer1_line'] }}   <br>
+     {{ hostvars['vpn01']['dmvpn_bgp_peer2_line'] }}   <br>
+     {{ hostvars['vpn01']['dmvpn_bgp_peer3_line'] }}   <br>
+
+<h4>BGP PEERS</h4>
+<table id="bgppeers">
+    <tr>
+        <th>Peer</th>
+        <th>Uptime</th>
+        <th>State</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer1_ip'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer1_uptime'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer1_state'] }}</td>
+        <td>
+        {% if hostvars['vpn01']['dmvpn_bgp_peer1_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn01']['dmvpn_bgp_peer1_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn01']['dmvpn_bgp_peer1_state'] != 'Idle') and (hostvars['vpn01']['dmvpn_bgp_peer1_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer2_ip'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer2_uptime'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer2_state'] }}</td>
+        <td>
+        {% if hostvars['vpn01']['dmvpn_bgp_peer2_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn01']['dmvpn_bgp_peer2_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn01']['dmvpn_bgp_peer2_state'] != 'Idle') and (hostvars['vpn01']['dmvpn_bgp_peer2_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer3_ip'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer3_uptime'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_bgp_peer3_state'] }}</td>
+        <td>
+        {% if hostvars['vpn01']['dmvpn_bgp_peer3_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn01']['dmvpn_bgp_peer3_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn01_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn01']['dmvpn_bgp_peer3_state'] != 'Idle') and (hostvars['vpn01']['dmvpn_bgp_peer3_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------PING_VPN01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>PING RESULTS</h3>
+<table id="pingresults">
+    <tr>
+        <th>Destination</th>
+		<th>Expected Results</th>
+        <th>Results</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>ISP - {{ hostvars['vpn01']['dmvpn_isp'] }}</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_isp_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_isp_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}
+        </td>
+    </tr>    
+    <tr>
+        <td>core01</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_core01_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_core01_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}        
+        </td>
+    </tr>
+    <tr>
+        <td>core02</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_core02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_core02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>fw01</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_fw01_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_fw01_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} </td>
+    </tr>
+    <tr>
+        <td>fw02</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_fw02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_fw02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>vpn01</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_vpn01_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_vpn01_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>vpn02</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_vpn02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_vpn02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>Google DNS</td>
+        <td>{{ hostvars['vpn01']['dmvpn_ping_google_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn01']['dmvpn_ping_google_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+</table>
+</div>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------HUB_VPN01---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+        
+<div>
+<h3>DMVPN STATUS</h3>
+<h4>DMVPN HUB</h4>
+<table id="dmvpnhub">
+    <tr>
+        <th>Hub IP</th>
+        <th>Status</th>
+		<th>Expected Value</th>
+		<th>Pass/Fail</th>
+    </tr>
+	<tr>
+	    <td>{{ hostvars['vpn01']['dmvpn_hub_peer'] }}</td>
+	    <td>{{ hostvars['vpn01']['dmvpn_hub_status_state'] }}</td>
+		<td>ACTIVE</td>
+		<td>
+		{% if hostvars['vpn01']['dmvpn_hub_status_state'] == 'ACTIVE' %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL</font></b>
+        {%-   if vpn01_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+		</td>
+	</tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------OVERALL_VPN01------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<center><h3>VPN01 OVERALL STATUS</h3>
+<h2>{% if vpn01_fail_status.flag == False %} <font color="green">PASS</font> {% elif vpn01_fail_status.flag == True %}<b><font color = "red">FAIL</font></b> {% endif %} 
+</h2></center>
+<br>
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE VPN01!!!</font><br>
+{% endif %}
+
+<hr>
+{#____   _____________________  _______   ________    #}
+{#\   \ /   /\______   \      \ \   _  \  \_____  \   #}
+{# \   Y   /  |     ___/   |   \/  /_\  \  /  ____/   #}
+{#  \     /   |    |  /    |    \  \_/   \/       \   #}
+{#   \___/    |____|  \____|__  /\_____  /\_______ \  #}
+{#                            \/       \/         \/  #}
+
+<a name="VPN02"></a>
+{% if vpn02_defined_status.flag == True %}
+<center><h2>{{ hostvars['vpn02'].hostname }}</h2></center>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------INTERFACE_vpn02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+<h3>INTERFACE INFORMATION</h3>
+<table id="iface">
+    <tr>
+        <th>Interface</th>
+        <th>Expected Status</th>
+		<th>Actual Status</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all expected interfaces #}
+    {% for item in dmvpn02_interface_expected %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ dmvpn02_interface_expected[item] }}</td>
+	<td>
+	  {% if item in hostvars['vpn02']['dmvpn_interfaces'] and hostvars['vpn02']['dmvpn_interfaces'][item]['operstatus'] is defined %}
+	  {{ hostvars['vpn02']['dmvpn_interfaces'][item]['operstatus'] }}
+	  {% else %}
+	  <font color="orange"> Unexpected Data</font>
+	  {% endif %}
+	</td>
+	<td>
+      {% if item in hostvars['vpn02']['dmvpn_interfaces'] and hostvars['vpn02']['dmvpn_interfaces'][item]['operstatus'] is defined and hostvars['vpn02']['dmvpn_interfaces'][item]['operstatus'] == dmvpn02_interface_expected[item] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}  
+	</td>
+    </tr>
+    {% endfor %}		
+</table>	
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------CODE_VPN02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>CODE VERSION</h3>
+<table id="codeversion">
+    <tr>
+        <th>Expected Value</th>
+		<th>Actual Value</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ dmvpn_code_ver }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_code_ver'] }}</td>
+		<td>
+		  {% if hostvars['vpn02']['dmvpn_code_ver'] == dmvpn_code_ver %}
+		  <font color="green">PASS</font>
+		  {% else %}
+		  <b><font color="red"> FAIL</font></b>  {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %} 
+		  {% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------LLDP_VPN02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<h3>LLDP</h3>
+<table id="lldpdata">
+    <tr>
+        <th>Interface</th>
+        <th>Neighbor</th>
+        <th>Neighbor-Port</th>
+        <th>Expected Data</th>
+        <th>Pass/Fail</th>
+    </tr>
+	{# loop through all dpvpn02 lldp #}
+    {% for item in hostvars['vpn02']['dmvpn_lldp'] %}
+	<tr>
+	<td>{{ item }}</td>
+	<td>{{ hostvars['vpn02']['dmvpn_lldp'][item][0]['host'] }}</td>
+	<td>{{ hostvars['vpn02']['dmvpn_lldp'][item][0]['port'] }}</td>
+	<td>
+	  {% if item in dmvpn02_lldp_expected %}
+	  {{ dmvpn02_lldp_expected[item].split('$')[0] }}-{{ dmvpn02_lldp_expected[item].split('$')[1] }}
+	  {% else %}
+	  Not expected
+	  {% endif %}
+	</td>
+	<td>
+	  {% if item not in dmvpn02_lldp_expected %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}
+	  {% if dmvpn02_lldp_expected[item].split('$')[0] in hostvars['vpn02']['dmvpn_lldp'][item][0]['host'] and  dmvpn02_lldp_expected[item].split('$')[1] in hostvars['vpn02']['dmvpn_lldp'][item][0]['port'] %}
+	  <font color="green">PASS</font>
+	  {% else %}
+	  <b><font color="red"> FAIL</font></b>
+      {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+	  {% endif %}     	  
+	</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------OSPF_vpn02----------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>OSPF DATA</h3>
+<div>
+<h3>ROUTING OSPF</h3>
+<table id="ospfneighbors">
+    <tr>
+        <th>Neighbor</th>
+        <th>Interface</th>
+        <th>State</th>
+        <th>Pass/Fail</th>
+    </tr
+    <tr>
+	{% if hostvars['vpn02']['dmvpn_ospf_neighborid'] is defined %}
+        <td>{{ hostvars['vpn02']['dmvpn_ospf_neighborid'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ospf_interface'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ospf_state'] }}</td>
+        <td>
+        {% if 'FULL/BDR' in hostvars['vpn02']['dmvpn_ospf_state'] %} <font color="green">PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}
+        </td>
+	{% else %}
+        <td><font color ="red">NOT FOUND<</td>
+        <td><font color ="red">NOT FOUND</font></td>
+        <td><font color ="red">NOT FOUND</font></td>
+        <td><font color ="red">FAIL</font>{%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}</td> 
+    {% endif %}       	
+    </tr>
+</table>
+</div>
+
+<h3>ROUTING BGP</h3>
+<h4>BGP - LINES</h4>
+     Neighbor V AS MsgRcvd MsgSent TblVer InQ OutQ Up/Down State/PfxRcd <br>
+     {{ hostvars['vpn02']['dmvpn_bgp_peer1_line'] }}   <br>
+     {{ hostvars['vpn02']['dmvpn_bgp_peer2_line'] }}   <br>
+     {{ hostvars['vpn02']['dmvpn_bgp_peer3_line'] }}   <br>
+
+{# ------------------------------------------------------------------------ #}
+{# ---------------------------BGP_vpn02------------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<h4>BGP PEERS</h4>
+<table id="bgppeers">
+    <tr>
+        <th>Peer</th>
+        <th>Uptime</th>
+        <th>State</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer1_ip'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer1_uptime'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer1_state'] }}</td>
+        <td>
+        {% if hostvars['vpn02']['dmvpn_bgp_peer1_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn02']['dmvpn_bgp_peer1_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn02']['dmvpn_bgp_peer1_state'] != 'Idle') and (hostvars['vpn02']['dmvpn_bgp_peer1_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer2_ip'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer2_uptime'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer2_state'] }}</td>
+        <td>
+        {% if hostvars['vpn02']['dmvpn_bgp_peer2_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn02']['dmvpn_bgp_peer2_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn02']['dmvpn_bgp_peer2_state'] != 'Idle') and (hostvars['vpn02']['dmvpn_bgp_peer2_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer3_ip'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer3_uptime'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_bgp_peer3_state'] }}</td>
+        <td>
+        {% if hostvars['vpn02']['dmvpn_bgp_peer3_state'] == 'Active' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if hostvars['vpn02']['dmvpn_bgp_peer3_state'] == 'Idle' %}<b><font color="red"> FAIL</font></b>{%- if vpn02_fail_status.update({'flag':True}) %}{%- endif %} {% endif %}
+        {% if ((hostvars['vpn02']['dmvpn_bgp_peer3_state'] != 'Idle') and (hostvars['vpn02']['dmvpn_bgp_peer3_state'] != 'Active')) %} <font color="green">PASS</font>{% endif %}
+        </td>
+    </tr>
+</table>
+</div>
+
+{# ------------------------------------------------------------------------ #}
+{# ----------------------------PING_vpn02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+
+<div>
+<h3>PING RESULTS</h3>
+<table id="pingresults">
+    <tr>
+        <th>Destination</th>
+		<th>Expected Results</th>
+        <th>Results</th>
+        <th>Pass/Fail</th>
+    </tr>
+    <tr>
+        <td>ISP - {{ hostvars['vpn02']['dmvpn_isp'] }}</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_isp_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_isp_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}
+        </td>
+    </tr>    
+    <tr>
+        <td>core01</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_core01_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_core01_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}        
+        </td>
+    </tr>
+    <tr>
+        <td>core02</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_core02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_core02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>fw01</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_fw01_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_fw01_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} </td>
+    </tr>
+    <tr>
+        <td>fw02</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_fw02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_fw02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>vpn02</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_vpn02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_vpn02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>vpn02</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_vpn02_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_vpn02_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+    <tr>
+        <td>Google DNS</td>
+        <td>{{ hostvars['vpn02']['dmvpn_ping_google_results'] }}</td>
+		<td>Success rate is 100 percent</td>
+        <td>
+        {% if 'Success rate is 100 percent' in hostvars['vpn02']['dmvpn_ping_google_results'] %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL - Packet loss</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+        </td>
+    </tr>
+</table>
+</div>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------HUB_vpn02---------------------------------- #}
+{# ------------------------------------------------------------------------ #}
+        
+<div>
+<h3>DMVPN STATUS</h3>
+<h4>DMVPN HUB</h4>
+<table id="dmvpnhub">
+    <tr>
+        <th>Hub IP</th>
+        <th>Status</th>
+		<th>Expected Value</th>
+		<th>Pass/Fail</th>
+    </tr>
+	<tr>
+	    <td>{{ hostvars['vpn02']['dmvpn_hub_peer'] }}</td>
+	    <td>{{ hostvars['vpn02']['dmvpn_hub_status_state'] }}</td>
+		<td>ACTIVE</td>
+		<td>
+		{% if hostvars['vpn02']['dmvpn_hub_status_state'] == 'ACTIVE' %} <font color="green"> PASS</font>
+        {% else %}
+        <b><font color="red"> FAIL</font></b>
+        {%-   if vpn02_fail_status.update({'flag':True}) %}{%- endif %}
+        {% endif %} 
+		</td>
+	</tr>
+</table>
+</div>
+<br>
+
+{# ------------------------------------------------------------------------ #}
+{# -----------------------------OVERALL_VPN02------------------------------ #}
+{# ------------------------------------------------------------------------ #}
+
+<center><h3>VPN02 OVERALL STATUS</h3>
+<h2>{% if vpn02_fail_status.flag == False %} <font color="green">PASS</font> {% elif vpn02_fail_status.flag == True %}<b><font color = "red">FAIL</font></b> {% endif %} 
+</h2></center>
+<br>
+
+{% else %}
+<font color="red"> UNABLE TO VALIDATE VPN02!!!</font><br>
+{% endif %}
+
+<hr>
+{#   _________              __            #}
+{#  /   _____/_____   ____ |  | __ ____   #}
+{#  \_____  \\____ \ /  _ \|  |/ // __ \  #}
+{#  /        \  |_> >  <_> )    <\  ___/  #}
+{# /_______  /   __/ \____/|__|_ \\___  > #}
+{#         \/|__|               \/    \/  #}
+<a name="SPOKES"></a>
+<center><h2>DMVPN SPOKES</h2></center>
+This Check is Across Both VPN routers
+{% if core01_defined_status.flag == True %}
+{% set current_site = hostvars['core01']['site'] %}
+{% elif core02_defined_status.flag == True %}
+{% set current_site = hostvars['core02']['site'] %}
+{% elif vpn01_defined_status.flag == True %}
+{% set current_site = hostvars['vpn01']['site'] %}
+{% elif vpn02_defined_status.flag == True %}
+{% set current_site = hostvars['vpn02']['site'] %}
+{% else %}
+{% set current_site = 'none' %}
+{% endif %}
+
+{% set dmvpn_spoke_up_list_vpn01 = [] %}
+{% if vpn01_defined_status.flag == True and hostvars['vpn01']['dmvpn_status_lines'] is defined %}
+{% for item in hostvars['vpn01']['dmvpn_status_lines'][0] %}
+  {% set spoke_split = item.split(' ') %}
+  {% if ((spoke_split[0] == '') and ('UP' in spoke_split)) %}
+  {{ dmvpn_spoke_up_list_vpn01.append(spoke_split[6]) }}
+  {% endif %}
+  {% if ((spoke_split[0] != '') and ('UP' in spoke_split)) %}
+  {{ dmvpn_spoke_up_list_vpn01.append(spoke_split[1]) }}
+  {% endif %}  
+{% endfor %}
+{% endif %}
+
+{% set dmvpn_spoke_up_list_vpn02 = [] %}
+{% if vpn02_defined_status.flag == True and hostvars['vpn02']['dmvpn_status_lines'] is defined %}
+{% for item in hostvars['vpn02']['dmvpn_status_lines'][0] %}
+  {% set spoke_split = item.split(' ') %}
+  {% if ((spoke_split[0] == '') and ('UP' in spoke_split)) %}
+  {{ dmvpn_spoke_up_list_vpn02.append(spoke_split[6]) }}
+  {% endif %}
+  {% if ((spoke_split[0] != '') and ('UP' in spoke_split)) %}
+  {{ dmvpn_spoke_up_list_vpn02.append(spoke_split[1]) }}
+  {% endif %}  
+{% endfor %}
+{% endif %}
+
+<table id="dmvpnspokes">
+    <tr>
+        <th>Site</th>
+        <th>Supernet</th>
+		<th>Primary IP</th>
+		<th>Secondary IP</th>
+        <th>Up On VPN and IP</th>
+    </tr>
+	{% for spoke in dmvpn_spokes %}
+	<tr>
+	    <td>{{ spoke }}</td>
+	    <td>{{ dmvpn_spokes[spoke]['supernet'] }}</td>
+		<td>{{ dmvpn_spokes[spoke]['01_ip']  }}</td>
+		<td>{{ dmvpn_spokes[spoke]['02_ip']  }}</td>
+        <td> 
+        {% if dmvpn_spokes[spoke]['01_ip'] in dmvpn_spoke_up_list_vpn01 %}
+        <font color="green">VPN01 - {{ dmvpn_spokes[spoke]['01_ip'] }}</font>
+        {% elif dmvpn_spokes[spoke]['01_ip'] in dmvpn_spoke_up_list_vpn02 %}
+        <font color="green">VPN02 - {{ dmvpn_spokes[spoke]['01_ip'] }}</font>
+        {% elif dmvpn_spokes[spoke]['02_ip'] in dmvpn_spoke_up_list_vpn01 %}
+        <font color="green">VPN01 - {{ dmvpn_spokes[spoke]['02_ip'] }}</font>
+        {% elif dmvpn_spokes[spoke]['02_ip'] in dmvpn_spoke_up_list_vpn02 %}
+        <font color="green">VPN02 - {{ dmvpn_spokes[spoke]['02_ip'] }}</font>
+
+        {% elif spoke == hostvars['core01']['site'] %}
+        <font color="green">SELF</font>
+
+        {% else %}
+        <font color="orange">NOT UP</font>
+        {%-   if spoke_warn_status.update({'flag':True}) %}{%- endif %}
+        {% endif %}
+        </td>
+    {% endfor %}
+	</tr>
+</table>
+</div>	
+
+<hr>
+{#_.___                                                   __________              __           #}
+{#_|   | ____   ______ ____   ____  __ _________   ____   \______   \____________/  |_  ______ #} 
+{#_|   |/    \ /  ___// __ \_/ ___\|  |  \_  __ \_/ __ \   |     ___/  _ \_  __ \   __\/  ___/ #}
+{#_|   |   |  \\___ \\  ___/\  \___|  |  /|  | \/\  ___/   |    |  (  <_> )  | \/|  |  \___ \  #}
+{#_|___|___|  /____  >\___  >\___  >____/ |__|    \___  >  |____|   \____/|__|   |__| /____  > #}
+{#_         \/     \/     \/     \/                   \/                                   \/  #}
+<a name="INSECURE"></a>
+{% if insecure_defined_status.flag == True %}
+<center><h2>INSECURE PORT CHECKS</h2></center>
+
+
+<h3>TELNET CHECKS</h3>
+<table id="telnet">
+    <tr>
+        <th>IP</th>	
+        <th>Telnet Open</th>
+        <th>Pass/Fail</th>
+    </tr>
+	
+	{% for check in hostvars['nt-server']['nt_telnet_check'] %} 
+    <tr>
+	    <td>{{ check.item }}</td>
+        <td>{{ check.failed }}</td>
+		<td>
+        {% if check.failed == False %}
+        <font color="green">PASS</font>
+	    {% else %}
+	    <font color="red">FAIL</font>
+	    {%-   if insecure_fail_status.update({'flag':True}) %}{%- endif %}
+        {%-   if insecure_warn_status.update({'flag':True}) %}{%- endif %}
+	    {% endif %} 
+        </td>		
+	{% endfor %}		
+    </tr>
+</table>
+
+<h3>HTTP CHECKS</h3>
+<table id="http">
+    <tr>
+        <th>IP</th>	
+        <th>HTTP Open</th>
+        <th>Pass/Fail</th>
+    </tr>
+	
+	{% for check in hostvars['nt-server']['nt_http_check'] %} 
+    <tr>
+	    <td>{{ check.item }}</td>
+        <td>{{ check.failed }}</td>
+		<td>
+        {% if check.failed == False %}
+        <font color="green">PASS</font>
+	    {% else %}
+	    <font color="red">FAIL</font>
+	    {%-   if insecure_fail_status.update({'flag':True}) %}{%- endif %}
+        {%-   if insecure_warn_status.update({'flag':True}) %}{%- endif %}
+	    {% endif %} 
+        </td>		
+	{% endfor %}		
+    </tr>
+</table>
+
+{% endif %}
+		 
+<hr>
+{# ___________.___ _______      _____  .____     #}
+{# \_   _____/|   |\      \    /  _  \ |    |    #}
+{#  |    __)  |   |/   |   \  /  /_\  \|    |    #}
+{#  |     \   |   /    |    \/    |    \    |___ #}
+{#  \___  /   |___\____|__  /\____|__  /_______ \#}
+{#      \/                \/         \/        \/#}
+
+
+<a name="FINAL_STATUS"></a>
+<center>
+<h1>FINAL STATUS OF ALL DEVICES</h1>
+</center>
+<table>
+<div>
+<table id="finalstatus">
+    <tr>
+        <th>Device</th>
+        <th>Pass/Fail</th>
+		<th>Warning</th>
+    </tr>
+    <tr>
+        <td>CORE01</td>
+        <td>
+		{% if core01_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if core01_fail_status.flag == False %}<font color="green">PASS</font>{% elif core01_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if core01_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif core01_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>
+    </tr>
+    <tr>
+        <td>CORE02</td>
+        <td>
+		{% if core02_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if core02_fail_status.flag == False %}<font color="green">PASS</font>{% elif core02_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if core02_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif core02_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>	
+    <tr>
+        <td>VPN01</td>
+        <td>
+		{% if vpn01_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if vpn01_fail_status.flag == False %}<font color="green">PASS</font>{% elif vpn01_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if vpn01_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif vpn01_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>
+    <tr>
+        <td>VPN02</td>
+        <td>
+		{% if vpn02_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if vpn02_fail_status.flag == False %}<font color="green">PASS</font>{% elif vpn02_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if vpn02_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif vpn02_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>
+    <tr>
+        <td>FW01</td>
+        <td>
+		{% if fw01_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if fw01_fail_status.flag == False %}<font color="green">PASS</font>{% elif fw01_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if fw01_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif fw01_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>
+    <tr>
+        <td>FW02</td>
+        <td>
+		{% if fw02_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if fw02_fail_status.flag == False %}<font color="green">PASS</font>{% elif fw02_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if fw02_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif fw02_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>  	
+    <tr>
+        <td>ARUBA ACCESS SWITCHES</td>
+        <td>
+		{% if aruba_access_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if aruba_access_fail_status.flag == False %}<font color="green">PASS</font>{% elif aruba_access_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if aruba_access_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif aruba_access_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr> 
+    <tr>
+        <td>DMVPN SPOKES</td>
+        <td>  ---  </td>
+		<td>
+        {% if spoke_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif spoke_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>  
+    <tr>
+        <td>INSECURE PORT CHECK</td>
+        <td>
+		{% if insecure_defined_status.flag == False %}<font color="red">UNABLE TO CHECK</font>
+		{% else %}
+        {% if insecure_fail_status.flag == False %}<font color="green">PASS</font>{% elif insecure_fail_status.flag == True %}<font color="red">FAIL</font>{% endif %}
+		{% endif %}
+        </td>
+		<td>
+        {% if insecure_warn_status.flag == False %}<font color="green">NO WARNINGS</font>{% elif insecure_warn_status.flag == True %}<font color="orange">WARNINGS</font>{% endif %}
+        </td>		
+    </tr>          
+
+</table>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+Please submit a ticket to NETNRE if you feel that this report is in error.
+
+</body>
+</html>
+

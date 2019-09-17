@@ -1,0 +1,59 @@
+---
+ - name: Insecure Port Check
+   gather_facts: no
+   #Uncomment out vars_prompt section if running 
+   #locally to have play prompt for user/pass 
+   #otherwise this will be a Tower survey
+   # vars_prompt:
+     # - name: current_user
+       # prompt: "Username "
+       # private: no
+     # - name: current_user_creds
+       # prompt: "Password "
+   vars_files:
+     - "secrets.yml"   
+   hosts: tools-server
+   ignore_errors: yes
+   roles:
+   - tools-server
+
+ - name: Verify cores
+   vars_files:
+     - "secrets.yml"   
+   hosts: cumulus-core
+   gather_facts: no
+   roles:
+   - cumulus-core 
+    
+ - name: Verify VPN routers
+   vars_files:
+     - "secrets.yml"   
+   hosts: cisco-dmvpn
+   gather_facts: no 
+   roles:
+   - cisco-dmvpn
+   
+ - name: Verify Aruba Access
+   vars_files:
+     - "secrets.yml"   
+   hosts: aruba-access
+   gather_facts: no
+   roles:
+   - aruba-access
+   
+ - name: Verify Firewalls
+   vars_files:
+     - "secrets.yml"   
+   hosts: report-server 
+   gather_facts: no
+   ignore_errors: yes
+   roles:
+   - palo-firewall
+
+ - name: Generate report
+   vars_files:
+    - "secrets.yml"   
+   hosts: all
+   gather_facts: no
+   roles:
+    - generate-report

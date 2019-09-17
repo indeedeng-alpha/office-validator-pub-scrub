@@ -1,0 +1,30 @@
+---  
+ - name: Check Telnet Access - Checking many it will take a bit
+   wait_for:
+      host: "{{ item }}"
+      port: '23'
+      state: stopped
+      delay: 0
+      timeout: 1
+   loop: "{{  hosts_to_check }}"
+   ignore_errors: yes
+   register: telnet_checks
+ 
+ - name: Check HTTP Access - Checking many it will take a bit
+   wait_for:
+      host: "{{ item }}"
+      port: '80'
+      state: stopped
+      delay: 0
+      timeout: 1
+   loop: "{{  hosts_to_check }}"    
+   ignore_errors: yes
+   register: http_checks  
+   
+ - name: Set Facts
+   vars:
+     telnet_check: "{{ telnet_checks.results }}"   
+     http_check: "{{ http_checks.results }}"   
+   set_fact:  
+     nt_telnet_check: "{{ telnet_check }}"   
+     nt_http_check: "{{ http_check }}"     

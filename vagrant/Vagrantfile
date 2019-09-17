@@ -1,0 +1,36 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$provision = <<SCRIPT
+echo 'Provision script start.'
+
+#sysctl.conf
+echo net.ipv4.ip_forward = 1 >> /etc/sysctl.conf
+echo net.ipv4.ip_nonlocal_bind = 1 >> /etc/sysctl.conf
+sysctl -p
+
+#yum.conf
+sed -i 's~keepcache=0~keepcache=1~' /etc/yum.conf; echo 'yum conf updated with keepcache=1'
+sed -i 's~/var/cache/yum~/vagrant/tmp/yum~' /etc/yum.conf; echo 'yum cache moved to /vagrant/tmp/yum'
+
+echo 'Provision script finish.'
+SCRIPT
+
+Vagrant.configure("2") do |config|
+
+  config.vm.define "webby" do |webby|
+    webby.vm.box = "geerlingguy/centos7"
+    webby.vm.hostname = "webby"
+ 
+    webby.vm.network :private_network, ip: "192.168.136.100"
+    webby.vm.network :forwarded_port, guest: 80, host: 8728, id: "http"
+
+    webby.vm.provider :virtualbox do |vm1|
+      vm1.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      vm1.customize ["modifyvm", :id, "--memory", 2048]
+      vm1.customize ["modifyvm", :id, "--name", "webby"]
+      vm1.customize ["modifyvm", :id, "--usb", "on"]
+      vm1.customize ["modifyvm", :id, "--usbehci", "off"]
+    end
+  end
+end

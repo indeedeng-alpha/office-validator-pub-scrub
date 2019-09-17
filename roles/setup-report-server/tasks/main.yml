@@ -1,0 +1,30 @@
+---       
+ - name: Ensure IPTables allows web traffic
+   iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_port: '80'
+    jump: ACCEPT
+    comment: Allow port 80 for web traffic
+    
+ - name: Ensure group "reportuser" exists
+   group:
+     name: reportuser
+     state: present
+   
+ - name: Ensure reportuser exists
+   user: 
+      name: reportuser
+      groups: reportuser
+      state: present
+      password: "{{ report_pass | password_hash('sha512') }}"
+   
+ - name: Give reportuser access to write to nginx file location
+   file:
+      path: /usr/share/nginx/html
+      state: directory
+      recurse: yes
+      owner: reportuser
+      group: reportuser  
+   
+

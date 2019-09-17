@@ -1,0 +1,58 @@
+---     
+ - name: Get Version
+   aruba_command:
+     commands: show version
+     provider: 
+       timeout: 20     
+   register: code_ver
+   
+ - name: Set Version
+   vars:
+      aa_code_ver: "{{ ((code_ver.stdout_lines[0])[4]).split()[-1] }}" 
+   set_fact:
+      aruba_access_code_ver: "{{ aa_code_ver }}"       
+   
+ - name: Get Hostname
+   aruba_command:
+     commands: show run | i hostname
+     provider: 
+       timeout: 20      
+   register: hostname   
+      
+ - name: Set Hostname
+   vars:
+      aa_hostname: "{{ ((hostname.stdout_lines[0])[0]).split()[-1] }}" 
+   set_fact:
+      aruba_access_hostname: "{{ aa_hostname }}"
+      
+ - name: Get Radius
+   aruba_command:
+     commands: show radius authentication
+     provider: 
+       timeout: 20      
+   register: radius
+   
+ - name: Set Radius
+   vars:
+      aa_radius: "{{ ((radius.stdout_lines[0])[-1]).split() }}" 
+      aa_radius_server: "{{ aa_radius[0] }}" 
+      aa_radius_port: "{{ aa_radius[1] }}" 
+      aa_radius_timeouts: "{{ aa_radius[2] }}" 
+      aa_radius_requests: "{{ aa_radius[3] }}" 
+      aa_radius_accepts: "{{ aa_radius[5] }}" 
+      aa_radius_rejects: "{{ aa_radius[6] }}"       
+   set_fact:
+      aruba_access_radius_server: "{{ aa_radius_server }}" 
+      aruba_access_radius_port: "{{ aa_radius_port }}"
+      aruba_access_radius_timeouts: "{{ aa_radius_timeouts }}"
+      aruba_access_radius_requests: "{{ aa_radius_requests }}"
+      aruba_access_radius_accepts: "{{ aa_radius_accepts }}"
+      aruba_access_radius_rejects: "{{ aa_radius_rejects }}"
+
+      
+
+     
+
+
+
+ 

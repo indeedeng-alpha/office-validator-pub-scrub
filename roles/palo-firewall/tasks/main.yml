@@ -1,0 +1,60 @@
+---     
+ - name: Get FW01 facts
+   panos_facts:
+     ip_address: "{{snet}}1.00"
+     password: "{{ palo_pass }}"
+     username: "{{ palo_user }}"
+   register: fw01_facts
+   ignore_errors: yes
+
+ - name: Set FW01 Facts
+   vars:
+     code_ver: "{{ fw01_facts.ansible_facts.ansible_net_version }}"
+     ha_enabled: "{{ fw01_facts.ansible_facts.ansible_net_ha_enabled }}"
+     ha_state: "{{ fw01_facts.ansible_facts.ansible_net_ha_localstate }}" 
+     hostname: "{{ fw01_facts.ansible_facts.ansible_net_hostname }}"      
+   set_fact:
+     fw01_code_ver: "{{ code_ver }}"
+     fw01_ha_enabled: "{{ ha_enabled }}"
+     fw01_ha_state: "{{ ha_state }}"
+     fw01_hostname: "{{ hostname }}"     
+   ignore_errors: yes
+   
+ - name: Get FW02 facts
+   panos_facts:
+     ip_address: "{{snet}}1.101"
+     password: "{{ palo_pass }}"
+     username: "{{ palo_user }}"
+   register: fw02_facts
+   ignore_errors: yes      
+     
+ - name: Set FW02 Facts
+   vars:
+     code_ver: "{{ fw02_facts.ansible_facts.ansible_net_version }}"
+     ha_enabled: "{{ fw02_facts.ansible_facts.ansible_net_ha_enabled }}"
+     ha_state: "{{ fw02_facts.ansible_facts.ansible_net_ha_localstate }}" 
+     hostname: "{{ fw02_facts.ansible_facts.ansible_net_hostname }}"      
+   set_fact:
+     fw02_code_ver: "{{ code_ver }}"
+     fw02_ha_enabled: "{{ ha_enabled }}"
+     fw02_ha_state: "{{ ha_state }}"
+     fw02_hostname: "{{ hostname }}"     
+   ignore_errors: yes   
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 

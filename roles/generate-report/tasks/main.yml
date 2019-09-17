@@ -1,0 +1,42 @@
+---       
+ - name: Get the Date
+   shell: "date +%Y-%m-%d%H-%M-%S"
+   delegate_to: report-server
+   register: tstamp
+   run_once: true
+   
+ - name: Set variables
+   set_fact:
+      date: "{{ tstamp.stdout[0:10]}}"
+      time: "{{ tstamp.stdout[10:]}}"
+   run_once: true  
+   delegate_to: report-server   
+   
+ - name: Create Directory for site and date
+   file:
+      path: /usr/share/nginx/html/reports/{{ hostvars['report-server'].site }}/{{ date }}
+      state: directory
+   delegate_to: report-server
+   run_once: true      
+   
+ - name: Pull in variables
+   include_vars:
+     file: dmvpn_spokes.yml
+     name: dmvpn_spokes
+     # just added this next line if things screw up
+   delegate_to: report-server  
+     
+ - name: Generate report 
+   template: 
+     src=report.j2 
+     dest=/usr/share/nginx/html/reports/{{ hostvars['report-server'].site }}/{{ date }}/{{ hostvars['report-server'].site }}-verify-{{ time }}.html
+   delegate_to: report-server   
+   run_once: true
+   ignore_errors: yes 
+   
+ - name: Print Report Name
+   delegate_to: report-server
+   debug:
+     msg: "http://{{ hostvars['report-server'].ansible_host }}/reports/{{ hostvars['report-server'].site }}/{{ date }}/{{ hostvars['report-server'].site }}-verify-{{ time }}.html"  
+   run_once: true   
+

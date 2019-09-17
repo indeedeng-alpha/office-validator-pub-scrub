@@ -1,0 +1,254 @@
+---     
+ - name: Gather Facts
+   ios_facts: 
+     gather_subset: all
+   register: ios_facts
+     
+ - name: Set facts
+   vars:
+      dmvpn_hostname: "{{ ios_facts.ansible_facts.ansible_net_hostname }}"
+      dmvpn_code_ver: "{{ ios_facts.ansible_facts.ansible_net_version }}"
+      dmvpn_interfaces: "{{ ios_facts.ansible_facts.ansible_net_interfaces }}"
+      dmvpn_lldp: "{{ ios_facts.ansible_facts.ansible_net_neighbors }}"       
+   set_fact:
+      hostname: "{{ dmvpn_hostname }}"  
+      dmvpn_code_ver: "{{ dmvpn_code_ver }}"  
+      dmvpn_interfaces: "{{ dmvpn_interfaces }}"        
+      dmvpn_lldp: "{{ dmvpn_lldp }}"  
+       
+ - name: Gather OSPF
+   ios_command: 
+     commands: show ip ospf neigh 
+   register: ios_ospf
+   
+ - name: Set OSPF facts
+   vars:
+      dmvpn_ospf: "{{ ios_ospf.stdout_lines[0] }}"    
+      dmvpn_ospf2: "{{ dmvpn_ospf[1] }}"  
+      dmvpn_ospf3: "{{ dmvpn_ospf2.split() }}"
+      dmvpn_ospf_neighborid: "{{ dmvpn_ospf3[0] }}"
+      dmvpn_ospf_state: "{{ dmvpn_ospf3[2] }}"
+      dmvpn_ospf_address: "{{ dmvpn_ospf3[4] }}"
+      dmvpn_ospf_interface: "{{ dmvpn_ospf3[5] }}"     
+   set_fact:
+      dmvpn_ospf_neighborid: "{{ dmvpn_ospf_neighborid }}"
+      dmvpn_ospf_state: "{{ dmvpn_ospf_state }}"
+      dmvpn_ospf_address: "{{ dmvpn_ospf_address }}"
+      dmvpn_ospf_interface: "{{ dmvpn_ospf_interface }}" 
+   ignore_errors: yes      
+
+ - name: Gather BGP
+   ios_command: 
+     commands: show ip bgp sum 
+   register: ios_bgp
+   
+ - name: Set BGP Facts
+   vars:
+     dmvpn_bgp: "{{ ios_bgp.stdout_lines[0] }}"    
+     dmvpn_bgp_peer1: "{{ dmvpn_bgp[-1] }}"  
+     dmvpn_bgp_peer1_2: "{{ dmvpn_bgp_peer1.split() }}"
+     dmvpn_bgp_peer1_ip: "{{ dmvpn_bgp_peer1_2[0] }}"
+     dmvpn_bgp_peer1_AS: "{{ dmvpn_bgp_peer1_2[2] }}"
+     dmvpn_bgp_peer1_uptime: "{{ dmvpn_bgp_peer1_2[8] }}"  
+     dmvpn_bgp_peer1_state: "{{ dmvpn_bgp_peer1_2[9] }}"  
+     dmvpn_bgp_peer2: "{{ dmvpn_bgp[-2] }}"  
+     dmvpn_bgp_peer2_2: "{{ dmvpn_bgp_peer2.split() }}"
+     dmvpn_bgp_peer2_ip: "{{ dmvpn_bgp_peer2_2[0] }}"
+     dmvpn_bgp_peer2_AS: "{{ dmvpn_bgp_peer2_2[2] }}"
+     dmvpn_bgp_peer2_uptime: "{{ dmvpn_bgp_peer2_2[8] }}"  
+     dmvpn_bgp_peer2_state: "{{ dmvpn_bgp_peer2_2[9] }}"
+     dmvpn_bgp_peer3: "{{ dmvpn_bgp[-3] }}"  
+     dmvpn_bgp_peer3_2: "{{ dmvpn_bgp_peer3.split() }}"
+     dmvpn_bgp_peer3_ip: "{{ dmvpn_bgp_peer3_2[0] }}"
+     dmvpn_bgp_peer3_AS: "{{ dmvpn_bgp_peer3_2[2] }}"
+     dmvpn_bgp_peer3_uptime: "{{ dmvpn_bgp_peer3_2[8] }}"  
+     dmvpn_bgp_peer3_state: "{{ dmvpn_bgp_peer3_2[9] }}"     
+   set_fact:
+     dmvpn_bgp_peer1_line: "{{ dmvpn_bgp_peer1 }}"    
+     dmvpn_bgp_peer2_line: "{{ dmvpn_bgp_peer2 }}"   
+     dmvpn_bgp_peer3_line: "{{ dmvpn_bgp_peer3 }}"   
+     dmvpn_bgp_peer1_ip: "{{ dmvpn_bgp_peer1_ip }}"
+     dmvpn_bgp_peer1_AS: "{{ dmvpn_bgp_peer1_AS }}" 
+     dmvpn_bgp_peer1_uptime: "{{ dmvpn_bgp_peer1_uptime }}"
+     dmvpn_bgp_peer1_state: "{{ dmvpn_bgp_peer1_state }}"
+     dmvpn_bgp_peer2_ip: "{{ dmvpn_bgp_peer2_ip }}"
+     dmvpn_bgp_peer2_AS: "{{ dmvpn_bgp_peer2_AS }}" 
+     dmvpn_bgp_peer2_uptime: "{{ dmvpn_bgp_peer2_uptime }}"
+     dmvpn_bgp_peer2_state: "{{ dmvpn_bgp_peer2_state }}"
+     dmvpn_bgp_peer3_ip: "{{ dmvpn_bgp_peer3_ip }}"
+     dmvpn_bgp_peer3_AS: "{{ dmvpn_bgp_peer3_AS }}" 
+     dmvpn_bgp_peer3_uptime: "{{ dmvpn_bgp_peer3_uptime }}"
+     dmvpn_bgp_peer3_state: "{{ dmvpn_bgp_peer3_state }}"       
+   ignore_errors: yes
+       
+ - name: Get Tunnel1 Peer if vpn02
+   ios_command: 
+     commands: show run int tun1 | i multicast 
+   register: ios_tun1_peer
+   when: inventory_hostname == 'vpn02' 
+
+ - name: Get Tunnel0 Peer if vpn01
+   ios_command: 
+     commands: show run int tun0 | i multicast 
+   register: ios_tun0_peer
+   when: inventory_hostname == 'vpn01'         
+
+ - name: Set the Hub Line
+   set_fact:
+      ios_hub_peer: "{{ ios_tun0_peer if inventory_hostname == 'vpn01' else ios_tun1_peer }}"
+
+ - name: Set Hub Facts
+   vars:
+     dmvpn_hub: "{{ ios_hub_peer.stdout }}" 
+     dmvpn_hub_line: "{{ dmvpn_hub[0] }}"  
+     dmvpn_hub_split: "{{ dmvpn_hub_line.split() }}" 
+     dmvpn_hub_peer: "{{ dmvpn_hub_split[-1] }}"     
+   set_fact:
+     dmvpn_hub_peer: "{{ dmvpn_hub_peer }}"
+
+ - name: Get Hub Peer Status
+   ios_command: 
+     commands: show crypto isakmp sa | i {{ dmvpn_hub_peer }}
+   register: ios_hub_status       
+
+ - name: Set Hub Status Facts
+   vars:
+     dmvpn_hub_status_line: "{{ ios_hub_status.stdout[0] }}"
+     dmvpn_hub_status_split: "{{ dmvpn_hub_status_line.split() }}"   
+     dmvpn_hub_status_state: "{{ dmvpn_hub_status_split[-1] }}"      
+   set_fact: 
+     dmvpn_hub_status_line: "{{ dmvpn_hub_status_line }}"   
+     dmvpn_hub_status_state: "{{ dmvpn_hub_status_state }}" 
+
+ - name: Pull in the other site data
+   include_vars:
+     file: dmvpn_spokes.yml
+     name: dmvpn_spokes 
+
+ - name: Create a list of spokes
+   delegate_to: localhost
+   vars: 
+     spoke_list: []
+   set_fact:
+     spoke_list: "{{ spoke_list + [item.key] }}"
+   loop:
+     "{{ dmvpn_spokes|dict2items }}"   
+     
+ - name: Send a ping to remote sites to bring up dmvpn spokes
+   ios_command: 
+     commands: ping {{ dmvpn_spokes[item]['srvr'] }} repeat 2 timeout 1
+   loop:
+     "{{ spoke_list }}"
+   ignore_errors: yes
+
+ - name: Check DMVPN status
+   ios_command:
+     commands: show dmvpn | i [0-9].[0-9].[0-9].[0-9].*[0-9].[0-9].[0-9].[0-9]
+   register: ios_dmvpn
+
+ - name: Spoke Status
+   vars:
+     dmvpn_status_lines: "{{ ios_dmvpn.stdout_lines }}"
+   set_fact:
+     dmvpn_status_lines: "{{ dmvpn_status_lines }}" 
+     
+ - name: Get ISP IP
+   ios_command:
+     commands: show run | i ip route 0.0.0.0
+   register: ios_default_gateway    
+
+ - name: Set ISP Facts
+   vars:
+     dmvpn_isp_line: "{{ ios_default_gateway.stdout[0] }}"
+     dmvpn_isp_split: "{{ dmvpn_isp_line.split() }}"   
+     dmvpn_isp: "{{ dmvpn_isp_split[4] }}"      
+   set_fact: 
+     dmvpn_isp: "{{ dmvpn_isp }}"    
+
+ - name: Ping ISP
+   ios_command:
+     commands: ping {{ dmvpn_isp }} repeat 5 timeout 1
+   register: ios_ping_isp_status
+   
+ - name: Ping core01
+   vars: 
+     super_net: "{{ snet }}" 
+   ios_command:
+     commands: ping {{ super_net }}1.2 repeat 5 timeout 1
+   register: ios_ping_core01_status
+
+ - name: Ping core02
+   vars: 
+     super_net: "{{ snet }}" 
+   ios_command:
+     commands: ping {{ super_net }}1.3 repeat 5 timeout 1
+   register: ios_ping_core02_status
+
+ - name: Ping fw01
+   vars: 
+     super_net: "{{ snet }}"
+   ios_command:
+     commands: ping {{ super_net }}1.100 repeat 5 timeout 1
+   register: ios_ping_fw01_status
+
+ - name: Ping fw02
+   vars: 
+     super_net: "{{ snet }}"
+   ios_command:
+     commands: ping {{ super_net }}1.101 repeat 5 timeout 1
+   register: ios_ping_fw02_status   
+   
+ - name: Ping vpn01
+   vars: 
+     super_net: "{{ snet }}"
+   ios_command:
+     commands: ping {{ super_net }}150.24 repeat 5 timeout 1
+   register: ios_ping_vpn01_status   
+
+ - name: Ping vpn02
+   vars: 
+     super_net: "{{ snet }}"
+   ios_command:
+     commands: ping {{ super_net }}150.23 repeat 5 timeout 1
+   register: ios_ping_vpn02_status   
+
+ - name: Ping google_dns
+   vars: 
+     super_net: "{{ snet }}"
+   ios_command:
+     commands: ping 8.8.8.8 repeat 5 timeout 1
+   register: ios_ping_google_status  
+
+ - name: Set Ping Facts
+   vars:
+     dmvpn_ping_isp: "{{ ios_ping_isp_status.stdout_lines[0] }}"
+     dmvpn_ping_core01: "{{ ios_ping_core01_status.stdout_lines[0] }}"
+     dmvpn_ping_core02: "{{ ios_ping_core02_status.stdout_lines[0] }}"
+     dmvpn_ping_fw01: "{{ ios_ping_fw01_status.stdout_lines[0] }}"
+     dmvpn_ping_fw02: "{{ ios_ping_fw02_status.stdout_lines[0] }}"
+     dmvpn_ping_vpn01: "{{ ios_ping_vpn01_status.stdout_lines[0] }}"
+     dmvpn_ping_vpn02: "{{ ios_ping_vpn02_status.stdout_lines[0] }}"
+     dmvpn_ping_google: "{{ ios_ping_google_status.stdout_lines[0] }}"
+     dmvpn_ping_isp_results: "{{ dmvpn_ping_isp[-1] }}"     
+     dmvpn_ping_core01_results: "{{ dmvpn_ping_core01[-1] }}"
+     dmvpn_ping_core02_results: "{{ dmvpn_ping_core02[-1] }}"
+     dmvpn_ping_fw01_results: "{{ dmvpn_ping_fw01[-1] }}"
+     dmvpn_ping_fw02_results: "{{ dmvpn_ping_fw02[-1] }}"
+     dmvpn_ping_vpn01_results: "{{ dmvpn_ping_vpn01[-1] }}"
+     dmvpn_ping_vpn02_results: "{{ dmvpn_ping_vpn02[-1] }}"
+     dmvpn_ping_google_results: "{{ dmvpn_ping_google[-1] }}"     
+     
+   set_fact:
+     dmvpn_ping_isp_results: "{{ dmvpn_ping_isp_results }}"
+     dmvpn_ping_core01_results: "{{ dmvpn_ping_core01_results }}"
+     dmvpn_ping_core02_results: "{{ dmvpn_ping_core02_results }}"
+     dmvpn_ping_fw01_results: "{{ dmvpn_ping_fw01_results }}"
+     dmvpn_ping_fw02_results: "{{ dmvpn_ping_fw02_results }}"
+     dmvpn_ping_vpn01_results: "{{ dmvpn_ping_vpn01_results }}"
+     dmvpn_ping_vpn02_results: "{{ dmvpn_ping_vpn02_results }}"
+     dmvpn_ping_google_results: "{{ dmvpn_ping_google_results }}" 
+     
+
+
+
+ 
